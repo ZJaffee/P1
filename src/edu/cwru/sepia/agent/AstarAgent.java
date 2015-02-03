@@ -332,7 +332,7 @@ public class AstarAgent extends Agent {
     		
     		openSet.remove(current);
     		closedSet.add(current);
-    		Set<MapLocation> sucessors = getSucessors(current,resourceLocations, xExtent, yExtent);
+    		Set<MapLocation> sucessors = getSucessors(current, enemyFootmanLoc, resourceLocations, xExtent, yExtent);
     		
     		//System.out.println(sucessors.size());
     		
@@ -388,7 +388,7 @@ public class AstarAgent extends Agent {
     /*
      * returns the set of locations we can move to from where the agent is currently located
      */
-    private Set<MapLocation> getSucessors(MapLocation current, Set<MapLocation> resourceLocations, int xExtent, int yExtent)
+    private Set<MapLocation> getSucessors(MapLocation current, MapLocation enemyFootmanLoc, Set<MapLocation> resourceLocations, int xExtent, int yExtent)
     {
     	int xval = current.x;
     	int yval = current.y;
@@ -399,7 +399,7 @@ public class AstarAgent extends Agent {
     		{
     			MapLocation loc = new MapLocation(xval+i,yval+j,current,0);
     			//checks if valid and that we are not at the current location
-    			if(isValidLocation(current, loc, resourceLocations, xExtent,  yExtent))
+    			if(isValidLocation(current, loc, enemyFootmanLoc, resourceLocations, xExtent,  yExtent))
     			{
     				toReturn.add(loc);
     				//System.out.println("("+loc.x+" , "+loc.y+")");
@@ -416,14 +416,14 @@ public class AstarAgent extends Agent {
      */
     private double dist_between(MapLocation current, MapLocation neighbor)
     {
-    	return Math.sqrt(Math.pow(current.x-neighbor.x,2)+Math.pow(current.y-neighbor.y,2));
+    	return 1.0;
     }
     
     /*
      * checks if the location is a location we can move to
      * not updated for the dynamic case yet
      */
-    private boolean isValidLocation(MapLocation current, MapLocation loc, Set<MapLocation> resourceLocations, int xExtent, int yExtent)
+    private boolean isValidLocation(MapLocation current, MapLocation loc, MapLocation enemyFootmanLoc, Set<MapLocation> resourceLocations, int xExtent, int yExtent)
     {
     	int xval = loc.x;
     	int yval = loc.y;
@@ -431,6 +431,8 @@ public class AstarAgent extends Agent {
     	if(xval<0 || yval<0 || xval>=xExtent || yval>=yExtent)
     		return false;
     	else if(current.x==loc.x && current.y==loc.y)
+    		return false;
+    	else if(current.x==enemyFootmanLoc.x && current.y==enemyFootmanLoc.y)
     		return false;
     	else if (setContains(resourceLocations, xval,yval))
     		return false;
