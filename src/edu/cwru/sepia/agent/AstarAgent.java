@@ -131,8 +131,9 @@ public class AstarAgent extends Agent {
         long planTime = 0;
 
         Map<Integer, Action> actions = new HashMap<Integer, Action>();
-
-        if(shouldReplanPath(newstate, statehistory, path)) {
+        
+        
+        if(enemyFootmanID !=-1 && shouldReplanPath(newstate, statehistory, path)) {
             long planStartTime = System.nanoTime();
             path = findPath(newstate);
             planTime = System.nanoTime() - planStartTime;
@@ -350,10 +351,10 @@ public class AstarAgent extends Agent {
     	
     	while(!openSet.isEmpty())
     	{
-    		System.out.println(openSet.size());
+    		//System.out.println(openSet.size());
     		//pop off the current value
     		MapLocation current = getLowestF(openSet,f_score);
-    		System.out.println("("+current.x+" , "+current.y+")");
+    		//System.out.println("("+current.x+" , "+current.y+")");
     		if(current.x == goal.x && current.y == goal.y)
     		{
     			System.out.println("done");
@@ -407,10 +408,10 @@ public class AstarAgent extends Agent {
     	{
     		current = current.cameFrom;
     		toReturn.push(current);
-    		System.out.println(toReturn.toString());
+    		//System.out.println(toReturn.toString());
     	}
     	toReturn.pop();
-    	System.out.println(toReturn.toString());
+    	//System.out.println(toReturn.toString());
     	return toReturn;
     	
     }
