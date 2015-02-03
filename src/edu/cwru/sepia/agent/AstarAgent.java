@@ -365,6 +365,9 @@ public class AstarAgent extends Agent {
         return null;
     }
     
+    /*
+     * rebuilds the path by taking the parent value of the agent and backtracks all the way up.
+     */
     private Stack<MapLocation> reconstructPath(MapLocation start, MapLocation end)
     {
     	Stack<MapLocation> toReturn = new Stack<MapLocation>();
@@ -382,6 +385,9 @@ public class AstarAgent extends Agent {
     	
     }
     
+    /*
+     * returns the set of locations we can move to from where the agent is currently located
+     */
     private Set<MapLocation> getSucessors(MapLocation current, Set<MapLocation> resourceLocations, int xExtent, int yExtent)
     {
     	int xval = current.x;
@@ -403,12 +409,20 @@ public class AstarAgent extends Agent {
     	return toReturn;
     	
     }
-
+    
+    /*
+     * works so that we will move horizontally when its worth it,
+     * and makes diagonal at a marginal cost higher than going just up down left or right
+     */
     private double dist_between(MapLocation current, MapLocation neighbor)
     {
     	return Math.sqrt(Math.pow(current.x-neighbor.x,2)+Math.pow(current.y-neighbor.y,2));
     }
     
+    /*
+     * checks if the location is a location we can move to
+     * not updated for the dynamic case yet
+     */
     private boolean isValidLocation(MapLocation current, MapLocation loc, Set<MapLocation> resourceLocations, int xExtent, int yExtent)
     {
     	int xval = loc.x;
@@ -424,6 +438,11 @@ public class AstarAgent extends Agent {
     		return true;
     }
     
+    /*
+     *checks if a set contains the specific map location values in the x and y coordinates
+     *this method is done because java native methods don't work properly with these objects 
+     *
+     */
     private boolean setContains(Set<MapLocation> set, int x, int y)
     {
     	for(MapLocation m : set)
@@ -434,7 +453,10 @@ public class AstarAgent extends Agent {
     	return false;
     }
     
-    
+    /*
+     * compares values in the open set and their heuristic values
+     *  and chooses the lowest value based on what direction we want to go 
+     */
     private MapLocation getLowestF(Set<MapLocation> oSet, Map<MapLocation,Double> f)
     {
     	MapLocation loc = null; 
