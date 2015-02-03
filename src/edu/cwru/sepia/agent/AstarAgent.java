@@ -1,6 +1,7 @@
 package edu.cwru.sepia.agent;
 
 import edu.cwru.sepia.action.Action;
+import edu.cwru.sepia.agent.AstarAgent.MapLocation;
 import edu.cwru.sepia.environment.model.history.History;
 import edu.cwru.sepia.environment.model.state.ResourceNode;
 import edu.cwru.sepia.environment.model.state.State;
@@ -219,6 +220,35 @@ public class AstarAgent extends Agent {
      */
     private boolean shouldReplanPath(State.StateView state, History.HistoryView history, Stack<MapLocation> currentPath)
     {
+    	if(state.getUnit(enemyFootmanID) == null) return false;
+    	
+    	Unit.UnitView footmanUnit = state.getUnit(footmanID);
+    	Unit.UnitView enemyFootmanUnit = state.getUnit(enemyFootmanID);
+    	
+        int footmanX = footmanUnit.getXPosition();
+        int footmanY = footmanUnit.getYPosition();
+
+        int enemyFootmanX = enemyFootmanUnit.getXPosition();
+        int enemyFootmanY = enemyFootmanUnit.getYPosition();
+        
+        /*
+        if(Math.abs(footmanX-enemyFootmanX)+Math.abs(footmanY-enemyFootmanY)<=2)
+        	return true;
+        */
+        
+        Vector<MapLocation> v = currentPath;
+        //System.out.print(v.toString());
+        int count = 0;
+        for(MapLocation m : v)
+        {
+        	if(m.x == enemyFootmanX && m.y == enemyFootmanY)
+        	{
+        		return true;
+        	}
+        	if(count == 5 ) break;
+        	count++;
+        }
+        
         return false;
     }
 
@@ -432,7 +462,7 @@ public class AstarAgent extends Agent {
     		return false;
     	else if(current.x==loc.x && current.y==loc.y)
     		return false;
-    	else if(current.x==enemyFootmanLoc.x && current.y==enemyFootmanLoc.y)
+    	else if(enemyFootmanLoc!= null && current.x==enemyFootmanLoc.x && current.y==enemyFootmanLoc.y)
     		return false;
     	else if (setContains(resourceLocations, xval,yval))
     		return false;

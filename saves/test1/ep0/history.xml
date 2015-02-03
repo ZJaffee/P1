@@ -4650,7 +4650,7 @@
                     <action xsi:type="DirectedAction" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
                         <unitId>141</unitId>
                         <actionType>PRIMITIVEMOVE</actionType>
-                        <direction>SOUTH</direction>
+                        <direction>SOUTHWEST</direction>
                     </action>
                 </actionEntry>
             </actionList>
@@ -4661,7 +4661,7 @@
                     <action xsi:type="DirectedAction" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
                         <unitId>141</unitId>
                         <actionType>PRIMITIVEMOVE</actionType>
-                        <direction>SOUTHWEST</direction>
+                        <direction>SOUTH</direction>
                     </action>
                 </actionEntry>
             </actionList>
@@ -8662,7 +8662,7 @@
                         <action xsi:type="DirectedAction" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
                             <unitId>141</unitId>
                             <actionType>PRIMITIVEMOVE</actionType>
-                            <direction>SOUTH</direction>
+                            <direction>SOUTHWEST</direction>
                         </action>
                         <feedback>COMPLETED</feedback>
                     </actionResult>
@@ -8676,7 +8676,7 @@
                         <action xsi:type="DirectedAction" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
                             <unitId>141</unitId>
                             <actionType>PRIMITIVEMOVE</actionType>
-                            <direction>SOUTHWEST</direction>
+                            <direction>SOUTH</direction>
                         </action>
                         <feedback>COMPLETED</feedback>
                     </actionResult>
@@ -13648,7 +13648,7 @@
                         <action xsi:type="DirectedAction" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
                             <unitId>141</unitId>
                             <actionType>PRIMITIVEMOVE</actionType>
-                            <direction>SOUTH</direction>
+                            <direction>SOUTHWEST</direction>
                         </action>
                         <feedback>COMPLETED</feedback>
                     </actionResult>
@@ -13662,7 +13662,7 @@
                         <action xsi:type="DirectedAction" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
                             <unitId>141</unitId>
                             <actionType>PRIMITIVEMOVE</actionType>
-                            <direction>SOUTHWEST</direction>
+                            <direction>SOUTH</direction>
                         </action>
                         <feedback>COMPLETED</feedback>
                     </actionResult>
@@ -27145,7 +27145,7 @@
                     <action xsi:type="DirectedAction" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
                         <unitId>141</unitId>
                         <actionType>PRIMITIVEMOVE</actionType>
-                        <direction>SOUTH</direction>
+                        <direction>SOUTHWEST</direction>
                     </action>
                 </actionEntry>
             </actionList>
@@ -27156,7 +27156,7 @@
                     <action xsi:type="DirectedAction" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
                         <unitId>141</unitId>
                         <actionType>PRIMITIVEMOVE</actionType>
-                        <direction>SOUTHWEST</direction>
+                        <direction>SOUTH</direction>
                     </action>
                 </actionEntry>
             </actionList>
@@ -31157,7 +31157,7 @@
                         <action xsi:type="DirectedAction" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
                             <unitId>141</unitId>
                             <actionType>PRIMITIVEMOVE</actionType>
-                            <direction>SOUTH</direction>
+                            <direction>SOUTHWEST</direction>
                         </action>
                         <feedback>COMPLETED</feedback>
                     </actionResult>
@@ -31171,7 +31171,7 @@
                         <action xsi:type="DirectedAction" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
                             <unitId>141</unitId>
                             <actionType>PRIMITIVEMOVE</actionType>
-                            <direction>SOUTHWEST</direction>
+                            <direction>SOUTH</direction>
                         </action>
                         <feedback>COMPLETED</feedback>
                     </actionResult>
@@ -36143,7 +36143,7 @@
                         <action xsi:type="DirectedAction" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
                             <unitId>141</unitId>
                             <actionType>PRIMITIVEMOVE</actionType>
-                            <direction>SOUTH</direction>
+                            <direction>SOUTHWEST</direction>
                         </action>
                         <feedback>COMPLETED</feedback>
                     </actionResult>
@@ -36157,7 +36157,7 @@
                         <action xsi:type="DirectedAction" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
                             <unitId>141</unitId>
                             <actionType>PRIMITIVEMOVE</actionType>
-                            <direction>SOUTHWEST</direction>
+                            <direction>SOUTH</direction>
                         </action>
                         <feedback>COMPLETED</feedback>
                     </actionResult>
