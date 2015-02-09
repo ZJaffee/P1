@@ -14,10 +14,12 @@ import java.util.*;
 
 public class AstarAgent extends Agent {
 
-    class MapLocation
+    class MapLocation implements Comparable<MapLocation>
     {
         public int x, y;
         public MapLocation cameFrom;
+        public double f_score;
+        public double g_score;
 
         public MapLocation(int x, int y, MapLocation cameFrom, float cost)
         {
@@ -26,11 +28,38 @@ public class AstarAgent extends Agent {
             this.cameFrom = cameFrom;
         }
         
+        public MapLocation(int x, int y, MapLocation cameFrom, float cost, double f, double g)
+        {
+            this(x, y, cameFrom, cost);
+            f_score = f;
+            g_score = g;   
+        }
+        
         @Override
         public String toString()
         {
         	return "("+x+","+y+")";
         }
+
+		@Override
+		public int compareTo(MapLocation o) {
+			return (int) (this.f_score - o.f_score);
+		}
+		
+		@Override
+		public int hashCode(){
+			return Integer.valueOf(x).hashCode() + Integer.valueOf(x).hashCode()^23;
+		}
+		
+		@Override
+		public boolean equals(Object o){
+			if(o instanceof MapLocation){
+				MapLocation o_ml = (MapLocation) o;
+				return this.x == o_ml.x && this.y == o_ml.y;
+			}else{
+				return false;
+			}
+		}
     }
 
     Stack<MapLocation> path;
@@ -39,11 +68,13 @@ public class AstarAgent extends Agent {
 
     private long totalPlanTime = 0; // nsecs
     private long totalExecutionTime = 0; //nsecs
+    
+    private boolean killedTownHall;
 
     public AstarAgent(int playernum)
     {
         super(playernum);
-
+        killedTownHall = false;
         System.out.println("Constructed AstarAgent");
     }
 
@@ -121,13 +152,21 @@ public class AstarAgent extends Agent {
         long startTime = System.nanoTime();
         path = findPath(newstate);
         totalPlanTime += System.nanoTime() - startTime;
-
-        return middleStep(newstate, statehistory);
+        
+        
+        Map<Integer, Action> ret = middleStep(newstate, statehistory);
+        //System.out.println("ret:"+ret);
+        return ret;
     }
 
     @Override
     public Map<Integer, Action> middleStep(State.StateView newstate, History.HistoryView statehistory) {
-        long startTime = System.nanoTime();
+       /* if(killedTownHall){
+        	System.out.println("Townhall is dead");
+        	return new HashMap<Integer, Action>();
+        	
+        }*/
+    	long startTime = System.nanoTime();
         long planTime = 0;
 
         Map<Integer, Action> actions = new HashMap<Integer, Action>();
@@ -167,6 +206,7 @@ public class AstarAgent extends Agent {
 
             // if townhall was destroyed on the last turn
             if(townhallUnit == null) {
+            	killedTownHall = true;
                 terminalStep(newstate, statehistory);
                 return actions;
             }
@@ -191,7 +231,8 @@ public class AstarAgent extends Agent {
 
     @Override
     public void terminalStep(State.StateView newstate, History.HistoryView statehistory) {
-        System.out.println("Total turns: " + newstate.getTurnNumber());
+        
+    	System.out.println("Total turns: " + newstate.getTurnNumber());
         System.out.println("Total planning time: " + totalPlanTime/1e9);
         System.out.println("Total execution time: " + totalExecutionTime/1e9);
         System.out.println("Total time: " + (totalExecutionTime + totalPlanTime)/1e9);
@@ -336,32 +377,38 @@ public class AstarAgent extends Agent {
     {
     	//Initialize the open and closed sets
     	Set<MapLocation> closedSet = new HashSet<MapLocation>();
-    	Set<MapLocation> openSet = new HashSet<MapLocation>();
-    	openSet.add(start);
+    	//Set<MapLocation> openSet = new HashSet<MapLocation>();
+    	PriorityQueue<MapLocation> openSet = new PriorityQueue<MapLocation>();
+    	MapLocation s = new MapLocation(start.x, start.y, start.cameFrom, 0, hfun(start, goal), 0);
+    	openSet.add(s);
     	//Map<MapLocation,MapLocation> cameFrom = new HashMap<MapLocation,MapLocation>();
     	
-    	Map<MapLocation,Double> g_score = new HashMap<MapLocation,Double>();
-    	Map<MapLocation,Double> h_score = new HashMap<MapLocation,Double>();
-    	Map<MapLocation,Double> f_score = new HashMap<MapLocation,Double>();
+    	//Map<MapLocation,Double> g_score = new HashMap<MapLocation,Double>();
+    	//Map<MapLocation,Double> h_score = new HashMap<MapLocation,Double>();
+    	//Map<MapLocation,Double> f_score = new HashMap<MapLocation,Double>();
     	
-    	g_score.put(start, 0.0);
-    	h_score.put(start, hfun(start,goal));
+    	//g_score.put(start, 0.0);
+    	//h_score.put(start, hfun(start,goal));
     	//f= g+h;
-    	f_score.put(start, hfun(start,goal));
+    	//f_score.put(start, hfun(start,goal));
+    	
+    	MapLocation current;
+    	double currentF;
+    	double currentG;
     	
     	while(!openSet.isEmpty())
     	{
     		//System.out.println(openSet.size());
     		//pop off the current value
-    		MapLocation current = getLowestF(openSet,f_score);
+    		current = openSet.remove();
     		//System.out.println("("+current.x+" , "+current.y+")");
-    		if(current.x == goal.x && current.y == goal.y)
+    		if(current.equals(goal))
     		{
     			System.out.println("done");
     			return reconstructPath(start,current);
     		}
     		
-    		openSet.remove(current);
+    		//openSet.remove(current);
     		closedSet.add(current);
     		Set<MapLocation> sucessors = getSucessors(current, enemyFootmanLoc, resourceLocations, xExtent, yExtent);
     		
@@ -369,32 +416,38 @@ public class AstarAgent extends Agent {
     		
     		for(MapLocation neighbor : sucessors)
     		{
-    			if(setContains(closedSet,neighbor.x,neighbor.y))
+    			//if(setContains(closedSet,neighbor.x,neighbor.y))
+    			if(closedSet.contains(neighbor))
     				continue;
-    			double g_score_estimate = g_score.get(current) + dist_between(current,neighbor);
+    			double g_score_estimate = current.g_score + dist_between(current,neighbor);
     			
-    			double g_neighbor;
+    			/*double g_neighbor;
     			if(g_score.get(neighbor)==null)
     				g_neighbor = 0;
     			else
     				g_neighbor = g_score.get(neighbor);
-    			
-    			if(!setContains(openSet,neighbor.x,neighbor.y) || g_score_estimate < g_neighbor)
-    			{
+    			*/
+    			//if(!setContains(openSet,neighbor.x,neighbor.y) )|| g_score_estimate < g_neighbor)
+    			//{
     				//cameFrom.put(neighbor, current);
-    				g_score.put(neighbor, g_score_estimate);
-    				h_score.put(neighbor, hfun(neighbor,goal));
-    				f_score.put(neighbor, g_score.get(neighbor)+h_score.get(neighbor));
-    				if(!setContains(openSet,neighbor.x,neighbor.y))
-    					openSet.add(neighbor);
-    			}
+    				//g_score.put(neighbor, g_score_estimate);
+    				//h_score.put(neighbor, hfun(neighbor,goal));
+    				//f_score.put(neighbor, g_score.get(neighbor)+h_score.get(neighbor));
+    				//if(!setContains(openSet,neighbor.x,neighbor.y)){
+    				if(openSet.contains(neighbor)){
+    					MapLocation n = new MapLocation(neighbor.x, neighbor.y, current, 0, g_score_estimate + hfun(neighbor, goal), g_score_estimate);
+    					openSet.add(n);
+    					
+    				}
+    			//}
     			
     		}
     	}
         // there is no path
     	System.out.println("No Available Path");
-        return null;
+        return new Stack<MapLocation>();
     }
+ 
     
     /*
      * rebuilds the path by taking the parent value of the agent and backtracks all the way up.
