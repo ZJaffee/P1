@@ -273,10 +273,10 @@ public class AstarAgent extends Agent {
         int enemyFootmanX = enemyFootmanUnit.getXPosition();
         int enemyFootmanY = enemyFootmanUnit.getYPosition();
         
-        /*
-        if(Math.abs(footmanX-enemyFootmanX)+Math.abs(footmanY-enemyFootmanY)<=2)
-        	return true;
-        */
+        
+        if(Math.abs(footmanX-enemyFootmanX)+Math.abs(footmanY-enemyFootmanY)>2)
+        	return false;
+        
         
         Vector<MapLocation> v = currentPath;
         //System.out.print(v.toString());
@@ -436,7 +436,7 @@ public class AstarAgent extends Agent {
     				//h_score.put(neighbor, hfun(neighbor,goal));
     				//f_score.put(neighbor, g_score.get(neighbor)+h_score.get(neighbor));
     				//if(!setContains(openSet,neighbor.x,neighbor.y)){
-    				if(openSet.contains(neighbor)){
+    				if(!openSet.contains(neighbor)){
     					MapLocation n = new MapLocation(neighbor.x, neighbor.y, current, 0, g_score_estimate + hfun(neighbor, goal), g_score_estimate);
     					openSet.add(n);
     					
@@ -459,7 +459,7 @@ public class AstarAgent extends Agent {
     	Stack<MapLocation> toReturn = new Stack<MapLocation>();
     	//toReturn.push(end);
     	MapLocation current = end;
-    	while(current!=start)
+    	while(!current.equals(start))
     	{
     		current = current.cameFrom;
     		toReturn.push(current);
