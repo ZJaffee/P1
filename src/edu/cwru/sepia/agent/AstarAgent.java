@@ -72,11 +72,21 @@ public class AstarAgent extends Agent {
 
     private long totalPlanTime = 0; // nsecs
     private long totalExecutionTime = 0; //nsecs
-    private int counter = 0;
+    
+    //We are "in danger" if the enemy footman is sensed on our path
+    //in within MAX_LOOKAHEAD steps.
+    //When we see the footman within MAX_LOOKAHEAD steps, we will replan the path,
+    //and we will also keep track of the dangerLevel, and replan the path again
+    //when the danger level reaches MAX_DANGER_LEVEL
+    //For more explanation, go to the shouldReplanPath function
+    private int dangerLevel = 0;
+    private final int MAX_DANGER_LEVEL = 4;
+    private final int MAX_LOOKAHEAD = 3;
     
     public AstarAgent(int playernum)
     {
         super(playernum);
+        dangerLevel = 0;
         System.out.println("Constructed AstarAgent");
     }
 
@@ -258,54 +268,63 @@ public class AstarAgent extends Agent {
     	//If there is no enemyFootman, there should never be a reason to replan the path
     	//if(state.getUnit(enemyFootmanID) == null) return false;
     	
-    	//Otherwise the positions of our footman and the enemy footman
-    	Unit.UnitView footmanUnit = state.getUnit(footmanID);
+    	//Otherwise the positions of the enemy footman
     	Unit.UnitView enemyFootmanUnit = state.getUnit(enemyFootmanID);
     	
     	//We just use the x and y coordinates since there isn't a built in
     	//getMapLocationFunction()
-        int footmanX = footmanUnit.getXPosition();
-        int footmanY = footmanUnit.getYPosition();
-
         int enemyFootmanX = enemyFootmanUnit.getXPosition();
         int enemyFootmanY = enemyFootmanUnit.getYPosition();
         
-        
-        if(counter >=4)
+        //If the dangerLevel reaches the MAX_DANGER_LEVEL
+        if(dangerLevel >= MAX_DANGER_LEVEL)
         {
-        	counter = 0;
+        	//Set dangerLevel to 0 (we are no longer in danger, unless we sense the
+        	//enemy footman again)
+        	dangerLevel = 0;
+        	//We should replan the path
         	return true;
         }
         
-        //Check if the footman is within checkDist steps ahead of us on our path
-        int checkDist = 3;
+        //Check if the footman is within MAX_LOOKAHEAD steps ahead of us on our path
         Vector<MapLocation> v = currentPath;
         int count = 0;
-        //Loop through the first checkDist locations ahead in our proposed path
-        for(int i = v.size()-1; i > 0; i--)
+        //Loop through the first checkDist locations, or until the path is over
+        for(int i = v.size()-1; 0 <= i && count < MAX_LOOKAHEAD; i--, count++)
         {
         	//Get the ith location
         	MapLocation m = v.get(i);
-        	System.out.println(counter);
-        	//If the footman is at this location, we want to replan the path
+        	//System.out.println(counter);
+        	//If the footman is spotted at this location, we want to replan the path
         	if(m.x == enemyFootmanX && m.y == enemyFootmanY)
         	{
-        		counter++;
-        		count = 0;
+        		System.out.println("Checking "+m.toString());
+        		//Increment dangerLevel: if the dangerLevel was previously zero,
+        		//meaning we were not in danger, we now consider ourselves in danger
+        		dangerLevel++;
+        		//We want to replan the path because the footman is in our way
         		return true;
         	}
-        	
-        	//After checking checkDist steps, don't check any further
-        	//Because the enemy footman might move as we get closer
-        	if(count == checkDist ) break;
-        	count++;
         }
-        if(counter!=0) counter++;
-        //If the footman isn't too close/on our path, no reason to replan the path
+        //If we are in danger, we increment the dangerLevel
+        //So we will try replanning again soon
+        if(inDanger()){ 
+        	dangerLevel++;
+        }
+        //If the footman isn't too close/on our path, no reason to replan the path (now)
         return false;
     }
 
     /**
+     * Check to see if we are in danger.
+     * For now, we are "in danger" if the dangerLevel is not 0
+     * @return	return true if we are in danger, false otherwise
+     */
+    private boolean inDanger() {
+		return dangerLevel != 0;
+	}
+
+	/**
      * This method is implemented for you. You should look at it to see examples of
      * how to find units and resources in Sepia.
      *
