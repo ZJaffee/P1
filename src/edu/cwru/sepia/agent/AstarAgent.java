@@ -78,6 +78,8 @@ public class AstarAgent extends Agent {
     //When we see the footman within MAX_LOOKAHEAD steps, we will replan the path,
     //and we will also keep track of the dangerLevel, and replan the path again
     //when the danger level reaches MAX_DANGER_LEVEL
+    //Our concept of danger is more the "danger of going along a bad path",
+    //Not so much the danger of being attacked
     //For more explanation, go to the shouldReplanPath function
     private int dangerLevel;
     private final int MAX_DANGER_LEVEL = 4;
@@ -272,49 +274,64 @@ public class AstarAgent extends Agent {
     	 * 
     	 */
 
-        //If the dangerLevel reaches the MAX_DANGER_LEVEL
-        if(dangerLevel >= MAX_DANGER_LEVEL)
-        {
-        	//Set dangerLevel to 0 (we are no longer in danger, unless we sense the
-        	//enemy footman again)
-        	dangerLevel = 0;
-        	//We should replan the path
-        	return true;
+        //If we are in danger
+        if(inDanger()){
+        	//if we are at max danger
+	    	if(dangerLevel >= MAX_DANGER_LEVEL)
+	        {
+	        	//Set dangerLevel to 0 (we are no longer in danger, unless we sense the
+	        	//enemy footman again)
+	        	dangerLevel = 0;
+	        	//We should replan the path
+	        	return true;
+	        }
+	    	//Else, increment the danger level
+	    	dangerLevel++;
         }
     	
-    	//Otherwise the positions of the enemy footman
+        //Get the positions of our footman and the enemy footman
+    	Unit.UnitView footmanUnit = state.getUnit(footmanID);
     	Unit.UnitView enemyFootmanUnit = state.getUnit(enemyFootmanID);
     	
     	//We just use the x and y coordinates since there isn't a built in
     	//getMapLocationFunction()
+        int footmanX = footmanUnit.getXPosition();
+        int footmanY = footmanUnit.getYPosition();
+
         int enemyFootmanX = enemyFootmanUnit.getXPosition();
         int enemyFootmanY = enemyFootmanUnit.getYPosition();
         
-        
-        //Check if the footman is within MAX_LOOKAHEAD steps ahead of us on our path
-        Vector<MapLocation> v = currentPath;
-        int count = 0;
-        //Loop through the first checkDist locations, or until the path is over
-        for(int i = v.size()-1; 0 <= i && count < MAX_LOOKAHEAD; i--, count++)
-        {
-        	//Get the ith location
-        	MapLocation m = v.get(i);
-        	//System.out.println(counter);
-        	//If the footman is spotted at this location, we want to replan the path
-        	if(m.x == enemyFootmanX && m.y == enemyFootmanY)
-        	{
-        		System.out.println("Checking "+m.toString());
-        		//Increment dangerLevel: if the dangerLevel was previously zero,
-        		//meaning we were not in danger, we now consider ourselves in danger
-        		dangerLevel++;
-        		//We want to replan the path because the footman is in our way
-        		return true;
-        	}
-        }
-        //If we are in danger, we increment the dangerLevel
-        //So we will try replanning again soon
-        if(inDanger()){ 
-        	dangerLevel++;
+        //Get the Chebyshev distance to the footman
+        //We should look ahead to see if the footman is on our path only
+        //if it is within the MAX_LOOKAHEAD steps because it's impossible
+        //to be within MAX_LOOKAHEAD steps away if the Chebyshev distance is greater
+        boolean shouldLookAhead = Math.max(Math.abs((double)(footmanX - enemyFootmanX)),
+        		Math.abs((double)(footmanY - enemyFootmanY))) <= MAX_LOOKAHEAD;
+        if(shouldLookAhead){
+        	System.out.println("Looking ahead");
+	        //Check if the footman is within MAX_LOOKAHEAD steps ahead of us on our path
+	        Vector<MapLocation> v = currentPath;
+	        int count = 0;
+	        //Loop through the first checkDist locations, or until the path is over
+	        for(int i = v.size()-1; 0 <= i && count < MAX_LOOKAHEAD; i--, count++)
+	        {
+	        	//Get the ith location
+	        	MapLocation m = v.get(i);
+	        	//System.out.println(counter);
+	        	//If the footman is spotted at this location, we want to replan the path
+	        	if(m.x == enemyFootmanX && m.y == enemyFootmanY)
+	        	{
+	        		//Not sure which of the below to options is better:
+	        		//Option 1:Increment dangerLevel: if the dangerLevel was previously zero,
+	        		//meaning we were not in danger, we now consider ourselves in danger
+	        		dangerLevel++;
+	        		//Option 2:Set dangerLevel to 1, ensuring that we will replan again in
+	        		//MAX_DANGER_LEVEL - 1 steps
+	        		//dangerLevel = 1;
+	        		//We want to replan the path because the footman is in our way
+	        		return true;
+	        	}
+	        }
         }
         //If the footman isn't too close/on our path, no reason to replan the path (now)
         return false;
