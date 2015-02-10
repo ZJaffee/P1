@@ -281,13 +281,15 @@ public class AstarAgent extends Agent {
         Vector<MapLocation> v = currentPath;
         //System.out.print(v.toString());
         int count = 0;
-        for(MapLocation m : v)
+        for(int i = v.size()-1; i > 0; i--)
         {
+        	MapLocation m = v.get(i);
+        	System.out.println(m);
         	if(m.x == enemyFootmanX && m.y == enemyFootmanY)
         	{
         		return true;
         	}
-        	if(count == 5 ) break;
+        	if(count == 4 ) break;
         	count++;
         }
         
