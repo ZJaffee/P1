@@ -18,17 +18,21 @@ public class AstarAgent extends Agent {
     {
         public int x, y;
         public MapLocation cameFrom;
-        public double f_score;
-        public double g_score;
+        public int f_score;
+        public int g_score;
+        
+        public MapLocation(int x, int y){
+        	this.x = x;
+        	this.y = y;
+        }
 
         public MapLocation(int x, int y, MapLocation cameFrom, float cost)
         {
-            this.x = x;
-            this.y = y;
+            this(x,y);
             this.cameFrom = cameFrom;
         }
         
-        public MapLocation(int x, int y, MapLocation cameFrom, float cost, double f, double g)
+        public MapLocation(int x, int y, MapLocation cameFrom, float cost, int f, int g)
         {
             this(x, y, cameFrom, cost);
             f_score = f;
@@ -43,12 +47,12 @@ public class AstarAgent extends Agent {
 
 		@Override
 		public int compareTo(MapLocation o) {
-			return (int) (this.f_score - o.f_score);
+			return (this.f_score - o.f_score);
 		}
 		
 		@Override
 		public int hashCode(){
-			return Integer.valueOf(x).hashCode() + Integer.valueOf(x).hashCode()^23;
+			return Integer.valueOf(x).hashCode() + Integer.valueOf(x).hashCode()*23;
 		}
 		
 		@Override
@@ -68,13 +72,10 @@ public class AstarAgent extends Agent {
 
     private long totalPlanTime = 0; // nsecs
     private long totalExecutionTime = 0; //nsecs
-    
-    private boolean killedTownHall;
 
     public AstarAgent(int playernum)
     {
         super(playernum);
-        killedTownHall = false;
         System.out.println("Constructed AstarAgent");
     }
 
@@ -153,19 +154,11 @@ public class AstarAgent extends Agent {
         path = findPath(newstate);
         totalPlanTime += System.nanoTime() - startTime;
         
-        
-        Map<Integer, Action> ret = middleStep(newstate, statehistory);
-        //System.out.println("ret:"+ret);
-        return ret;
+        return middleStep(newstate, statehistory);
     }
 
     @Override
     public Map<Integer, Action> middleStep(State.StateView newstate, History.HistoryView statehistory) {
-       /* if(killedTownHall){
-        	System.out.println("Townhall is dead");
-        	return new HashMap<Integer, Action>();
-        	
-        }*/
     	long startTime = System.nanoTime();
         long planTime = 0;
 
@@ -206,7 +199,6 @@ public class AstarAgent extends Agent {
 
             // if townhall was destroyed on the last turn
             if(townhallUnit == null) {
-            	killedTownHall = true;
                 terminalStep(newstate, statehistory);
                 return actions;
             }
@@ -262,11 +254,15 @@ public class AstarAgent extends Agent {
      */
     private boolean shouldReplanPath(State.StateView state, History.HistoryView history, Stack<MapLocation> currentPath)
     {
+    	//If there is no enemyFootman, there should never be a reason to replan the path
     	if(state.getUnit(enemyFootmanID) == null) return false;
     	
+    	//Otherwise the positions of our footman and the enemy footman
     	Unit.UnitView footmanUnit = state.getUnit(footmanID);
     	Unit.UnitView enemyFootmanUnit = state.getUnit(enemyFootmanID);
     	
+    	//We just use the x and y coordinates since there isn't a built in
+    	//getMapLocationFunction()
         int footmanX = footmanUnit.getXPosition();
         int footmanY = footmanUnit.getYPosition();
 
@@ -277,22 +273,28 @@ public class AstarAgent extends Agent {
         if(Math.abs(footmanX-enemyFootmanX)+Math.abs(footmanY-enemyFootmanY)>2)
         	return false;
         
-        
+        //Check if the footman is within checkDist steps ahead of us on our path
+        int checkDist = 4;
         Vector<MapLocation> v = currentPath;
-        //System.out.print(v.toString());
         int count = 0;
+        //Loop through the first checkDist locations ahead in our proposed path
         for(int i = v.size()-1; i > 0; i--)
         {
+        	//Get the ith location
         	MapLocation m = v.get(i);
-        	System.out.println(m);
+        	
+        	//If the footman is at this location, we want to replan the path
         	if(m.x == enemyFootmanX && m.y == enemyFootmanY)
         	{
         		return true;
         	}
-        	if(count == 4 ) break;
+        	//After checking checkDist steps, don't check any further
+        	//Because the enemy footman might move as we get closer
+        	if(count == checkDist ) break;
         	count++;
         }
         
+        //If the footman isn't too close/on our path, no reason to replan the path
         return false;
     }
 
@@ -378,70 +380,59 @@ public class AstarAgent extends Agent {
     private Stack<MapLocation> AstarSearch(MapLocation start, MapLocation goal, int xExtent, int yExtent, MapLocation enemyFootmanLoc, Set<MapLocation> resourceLocations)
     {
     	//Initialize the open and closed sets
+    	//Closed set is a HashMap to have constant .contains() check
     	Set<MapLocation> closedSet = new HashSet<MapLocation>();
-    	//Set<MapLocation> openSet = new HashSet<MapLocation>();
+    	//Open set is a priority queue to have logn getMax F value
+    	//A possible optimization would be to also have a HashSet openset, so
+    	//it would have a O(1) .contains() method rather than O(logn)
     	PriorityQueue<MapLocation> openSet = new PriorityQueue<MapLocation>();
+    	
+    	//The given MapLocation is not the right format for a HashSet and Priority Queue, 
+    	//so we convert it
     	MapLocation s = new MapLocation(start.x, start.y, start.cameFrom, 0, hfun(start, goal), 0);
     	openSet.add(s);
-    	//Map<MapLocation,MapLocation> cameFrom = new HashMap<MapLocation,MapLocation>();
-    	
-    	//Map<MapLocation,Double> g_score = new HashMap<MapLocation,Double>();
-    	//Map<MapLocation,Double> h_score = new HashMap<MapLocation,Double>();
-    	//Map<MapLocation,Double> f_score = new HashMap<MapLocation,Double>();
-    	
-    	//g_score.put(start, 0.0);
-    	//h_score.put(start, hfun(start,goal));
-    	//f= g+h;
-    	//f_score.put(start, hfun(start,goal));
     	
     	MapLocation current;
-    	double currentF;
-    	double currentG;
-    	
+    	//While the open set is not empty
     	while(!openSet.isEmpty())
     	{
-    		//System.out.println(openSet.size());
-    		//pop off the current value
+    		//Remove the best (highest F value) location from the open set
+    		//remove() for a priority queue will remove the best location
+    		//based on the .compareTo() function we have defined
     		current = openSet.remove();
-    		//System.out.println("("+current.x+" , "+current.y+")");
+    		
+    		//If this is the goal, we've completed the search
     		if(current.equals(goal))
     		{
     			System.out.println("done");
     			return reconstructPath(start,current);
     		}
-    		
-    		//openSet.remove(current);
+    		//Otherwise, add this location to the closed set
     		closedSet.add(current);
+    		//Get the successors of this node
     		Set<MapLocation> sucessors = getSucessors(current, enemyFootmanLoc, resourceLocations, xExtent, yExtent);
     		
-    		//System.out.println(sucessors.size());
-    		
+    		//Check each successor
     		for(MapLocation neighbor : sucessors)
     		{
-    			//if(setContains(closedSet,neighbor.x,neighbor.y))
+    			//If we have explored it already, skip it
     			if(closedSet.contains(neighbor))
     				continue;
-    			double g_score_estimate = current.g_score + dist_between(current,neighbor);
     			
-    			/*double g_neighbor;
-    			if(g_score.get(neighbor)==null)
-    				g_neighbor = 0;
-    			else
-    				g_neighbor = g_score.get(neighbor);
-    			*/
-    			//if(!setContains(openSet,neighbor.x,neighbor.y) )|| g_score_estimate < g_neighbor)
-    			//{
-    				//cameFrom.put(neighbor, current);
-    				//g_score.put(neighbor, g_score_estimate);
-    				//h_score.put(neighbor, hfun(neighbor,goal));
-    				//f_score.put(neighbor, g_score.get(neighbor)+h_score.get(neighbor));
-    				//if(!setContains(openSet,neighbor.x,neighbor.y)){
-    				if(!openSet.contains(neighbor)){
-    					MapLocation n = new MapLocation(neighbor.x, neighbor.y, current, 0, g_score_estimate + hfun(neighbor, goal), g_score_estimate);
-    					openSet.add(n);
-    					
-    				}
-    			//}
+    			//If it is not in the open set
+				if(!openSet.contains(neighbor)){
+					//Add it to the open set
+					// -- But first we have to calculate it's g and f values because
+					// -- get successors does not do this (since some successor are skipped
+					// -- because they are in the open set, it is better to not make this
+					// -- calculation for ever successor in getSuccessors()
+					//The g score is just 1 plus the g score of the current node
+					int g_score_estimate = current.g_score + 1;
+					MapLocation n = new MapLocation(neighbor.x, neighbor.y, current, 0, 
+							g_score_estimate + hfun(neighbor, goal), g_score_estimate);
+					openSet.add(n);
+					
+				}
     			
     		}
     	}
@@ -450,45 +441,58 @@ public class AstarAgent extends Agent {
         return new Stack<MapLocation>();
     }
  
-    
-    /*
-     * rebuilds the path by taking the parent value of the agent and backtracks all the way up.
+    /**
+     * Rebuilds the path by taking the parent location and backtracking through its cameFrom
+     * @param start The start of the path
+     * @param end	The end of the path
+     * @return	a stack form of the path
      */
     private Stack<MapLocation> reconstructPath(MapLocation start, MapLocation end)
     {
+    	//Intitialize our returned stack
     	Stack<MapLocation> toReturn = new Stack<MapLocation>();
-    	//toReturn.push(end);
+    	
+    	//We start from the end
     	MapLocation current = end;
+    	//Until we reach the start, keep pulling from the cameFrom value
     	while(!current.equals(start))
     	{
     		current = current.cameFrom;
+    		//Push the cameFrom to our return stack
     		toReturn.push(current);
-    		//System.out.println(toReturn.toString());
     	}
-    	toReturn.pop();
-    	//System.out.println(toReturn.toString());
+    	
+    	//Return the completed path
     	return toReturn;
     	
     }
     
-    /*
-     * returns the set of locations we can move to from where the agent is currently located
+    /**
+     * Finds all the possible children locations from the current location
+     * @param current The current location
+     * @param enemyFootmanLoc	The Location of the enemy footman
+     * @param resourceLocations	The set of resource locations
+     * @param xExtent	The extent of the x coordinate of the grid
+     * @param yExtent	The extent of the y coordinate of the grid
+     * @return	Returns a set of the successors
      */
     private Set<MapLocation> getSucessors(MapLocation current, MapLocation enemyFootmanLoc, Set<MapLocation> resourceLocations, int xExtent, int yExtent)
     {
-    	int xval = current.x;
-    	int yval = current.y;
+    	//Initialize the returned set
     	Set<MapLocation> toReturn = new HashSet<MapLocation>();
+    	//We must check all the grid locations around current
+    	//-- up, down, left, right, and diagonoals
     	for(int i = -1; i<=1; i++)
     	{
     		for(int j = -1; j<=1; j++)
     		{
-    			MapLocation loc = new MapLocation(xval+i,yval+j,current,0);
-    			//checks if valid and that we are not at the current location
+    			//Make the map location of this potential succesor
+    			MapLocation loc = new MapLocation(current.x+i,current.y+j);
+    			//Check if there's anything already in this potential successor
     			if(isValidLocation(current, loc, enemyFootmanLoc, resourceLocations, xExtent,  yExtent))
     			{
+    				//If there's nothing at loc, it is a successor, so add it to the return set
     				toReturn.add(loc);
-    				//System.out.println("("+loc.x+" , "+loc.y+")");
     			}
     		}
     	}
@@ -497,77 +501,47 @@ public class AstarAgent extends Agent {
     }
     
     /*
-     * works so that we will move horizontally when its worth it,
-     * and makes diagonal at a marginal cost higher than going just up down left or right
-     */
-    private double dist_between(MapLocation current, MapLocation neighbor)
-    {
-    	return 1.0;
-    }
-    
-    /*
      * checks if the location is a location we can move to
      * not updated for the dynamic case yet
      */
+    /**
+     * Checks if a location is one that is possible to move to, ie it is empty.
+     * @param current The current location
+     * @param loc	The location we are checking
+     * @param enemyFootmanLoc	The enemy footman location
+     * @param resourceLocations	The set of resource locations
+     * @param xExtent	The extent of the x coordinate of the grid
+     * @param yExtent	The extent of the y coordinate of the grid
+     * @return	True if the loc is empty, false otherwise
+     */
     private boolean isValidLocation(MapLocation current, MapLocation loc, MapLocation enemyFootmanLoc, Set<MapLocation> resourceLocations, int xExtent, int yExtent)
     {
-    	int xval = loc.x;
-    	int yval = loc.y;
-      	
-    	if(xval<0 || yval<0 || xval>=xExtent || yval>=yExtent)
+    	//If there is a resource at loc, return false
+    	if (resourceLocations.contains(loc))
     		return false;
-    	else if(current.x==loc.x && current.y==loc.y)
+    	//If the location is the current (our fighter is currently there) return false
+    	else if(loc.equals(current))
     		return false;
-    	else if(enemyFootmanLoc!= null && current.x==enemyFootmanLoc.x && current.y==enemyFootmanLoc.y)
+      	//If the location is off the board, return false
+    	else if(loc.x<0 || loc.y<0 || loc.x>=xExtent || loc.y>=yExtent)
     		return false;
-    	else if (setContains(resourceLocations, xval,yval))
+    	//If there is an enemy footman, and it is at loc, return false
+    	else if(enemyFootmanLoc!= null && loc.equals(enemyFootmanLoc))
     		return false;
+    	//Otherwise, loc is valid
     	else
     		return true;
     }
     
-    /*
-     *checks if a set contains the specific map location values in the x and y coordinates
-     *this method is done because java native methods don't work properly with these objects 
-     *
+    /**
+     * The heuristic described by the assignment (Chebyshev distance).
+     * @param start The start location (location we are testing from)
+     * @param goal	The goal location
+     * @return	the chebyshev distance (MAX( |start.x = goal.x|, |start.y - goal.y| )
      */
-    private boolean setContains(Set<MapLocation> set, int x, int y)
+    private int hfun(MapLocation start, MapLocation goal)
     {
-    	for(MapLocation m : set)
-    	{
-    		if(m.x == x && m.y == y)
-    			return true;
-    	}
-    	return false;
-    }
-    
-    /*
-     * compares values in the open set and their heuristic values
-     *  and chooses the lowest value based on what direction we want to go 
-     */
-    private MapLocation getLowestF(Set<MapLocation> oSet, Map<MapLocation,Double> f)
-    {
-    	MapLocation loc = null; 
-    	double val = Integer.MAX_VALUE;
-    	for(MapLocation m:oSet)
-    	{
-    		if(f.get(m)<=val)
-    		{
-    			loc = m;
-    			val = f.get(loc);
-    		}
-    	}
-    	return loc;
-    }
-    /*
-     * the huristic function used for A* Search using the Chebyshev distance huristic
-     * 
-     * @param start Map Location where we are starting huristic calculation from
-     * @param goal Map Location of the goal
-     */
-    private Double hfun(MapLocation start, MapLocation goal)
-    {
-    	return Math.max((double)(Math.abs(start.x - goal.x)),(double)(Math.abs(start.y - goal.y)));
+    	return Math.max((Math.abs(start.x - goal.x)),(Math.abs(start.y - goal.y)));
     }
     /**
      * Primitive actions take a direction (e.g. NORTH, NORTHEAST, etc)
