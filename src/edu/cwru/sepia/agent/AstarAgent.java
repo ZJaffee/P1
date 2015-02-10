@@ -286,6 +286,7 @@ public class AstarAgent extends Agent {
         	//If the footman is at this location, we want to replan the path
         	if(m.x == enemyFootmanX && m.y == enemyFootmanY)
         	{
+        		count = 0;
         		return true;
         	}
         	//After checking checkDist steps, don't check any further
