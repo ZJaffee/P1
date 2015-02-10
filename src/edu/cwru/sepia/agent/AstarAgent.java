@@ -79,7 +79,7 @@ public class AstarAgent extends Agent {
     //and we will also keep track of the dangerLevel, and replan the path again
     //when the danger level reaches MAX_DANGER_LEVEL
     //For more explanation, go to the shouldReplanPath function
-    private int dangerLevel = 0;
+    private int dangerLevel;
     private final int MAX_DANGER_LEVEL = 4;
     private final int MAX_LOOKAHEAD = 3;
     
@@ -265,17 +265,13 @@ public class AstarAgent extends Agent {
      */
     private boolean shouldReplanPath(State.StateView state, History.HistoryView history, Stack<MapLocation> currentPath)
     {
-    	//If there is no enemyFootman, there should never be a reason to replan the path
-    	//if(state.getUnit(enemyFootmanID) == null) return false;
-    	
-    	//Otherwise the positions of the enemy footman
-    	Unit.UnitView enemyFootmanUnit = state.getUnit(enemyFootmanID);
-    	
-    	//We just use the x and y coordinates since there isn't a built in
-    	//getMapLocationFunction()
-        int enemyFootmanX = enemyFootmanUnit.getXPosition();
-        int enemyFootmanY = enemyFootmanUnit.getYPosition();
-        
+    	/*The below check was removed because we altered the middleStepFunction to only call shouldReplanPath
+    	 * when there is an enemy footman.
+    	If there is no enemyFootman, there should never be a reason to replan the path
+    	if(state.getUnit(enemyFootmanID) == null) return false;
+    	 * 
+    	 */
+
         //If the dangerLevel reaches the MAX_DANGER_LEVEL
         if(dangerLevel >= MAX_DANGER_LEVEL)
         {
@@ -285,6 +281,15 @@ public class AstarAgent extends Agent {
         	//We should replan the path
         	return true;
         }
+    	
+    	//Otherwise the positions of the enemy footman
+    	Unit.UnitView enemyFootmanUnit = state.getUnit(enemyFootmanID);
+    	
+    	//We just use the x and y coordinates since there isn't a built in
+    	//getMapLocationFunction()
+        int enemyFootmanX = enemyFootmanUnit.getXPosition();
+        int enemyFootmanY = enemyFootmanUnit.getYPosition();
+        
         
         //Check if the footman is within MAX_LOOKAHEAD steps ahead of us on our path
         Vector<MapLocation> v = currentPath;
