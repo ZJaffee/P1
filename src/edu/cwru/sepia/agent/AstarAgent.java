@@ -72,7 +72,8 @@ public class AstarAgent extends Agent {
 
     private long totalPlanTime = 0; // nsecs
     private long totalExecutionTime = 0; //nsecs
-
+    private int counter = 0;
+    
     public AstarAgent(int playernum)
     {
         super(playernum);
@@ -255,7 +256,7 @@ public class AstarAgent extends Agent {
     private boolean shouldReplanPath(State.StateView state, History.HistoryView history, Stack<MapLocation> currentPath)
     {
     	//If there is no enemyFootman, there should never be a reason to replan the path
-    	if(state.getUnit(enemyFootmanID) == null) return false;
+    	//if(state.getUnit(enemyFootmanID) == null) return false;
     	
     	//Otherwise the positions of our footman and the enemy footman
     	Unit.UnitView footmanUnit = state.getUnit(footmanID);
@@ -270,11 +271,14 @@ public class AstarAgent extends Agent {
         int enemyFootmanY = enemyFootmanUnit.getYPosition();
         
         
-        if(Math.abs(footmanX-enemyFootmanX)+Math.abs(footmanY-enemyFootmanY)>2)
-        	return false;
+        if(counter >=4)
+        {
+        	counter = 0;
+        	return true;
+        }
         
         //Check if the footman is within checkDist steps ahead of us on our path
-        int checkDist = 4;
+        int checkDist = 3;
         Vector<MapLocation> v = currentPath;
         int count = 0;
         //Loop through the first checkDist locations ahead in our proposed path
@@ -282,19 +286,21 @@ public class AstarAgent extends Agent {
         {
         	//Get the ith location
         	MapLocation m = v.get(i);
-        	
+        	System.out.println(counter);
         	//If the footman is at this location, we want to replan the path
         	if(m.x == enemyFootmanX && m.y == enemyFootmanY)
         	{
+        		counter++;
         		count = 0;
         		return true;
         	}
+        	
         	//After checking checkDist steps, don't check any further
         	//Because the enemy footman might move as we get closer
         	if(count == checkDist ) break;
         	count++;
         }
-        
+        if(counter!=0) counter++;
         //If the footman isn't too close/on our path, no reason to replan the path
         return false;
     }
