@@ -425,7 +425,7 @@ public class AstarAgent extends Agent {
 					// -- But first we have to calculate it's g and f values because
 					// -- get successors does not do this (since some successor are skipped
 					// -- because they are in the open set, it is better to not make this
-					// -- calculation for ever successor in getSuccessors()
+					// -- calculation for every successor in getSuccessors()
 					//The g score is just 1 plus the g score of the current node
 					int g_score_estimate = current.g_score + 1;
 					MapLocation n = new MapLocation(neighbor.x, neighbor.y, current, 0, 
@@ -443,16 +443,18 @@ public class AstarAgent extends Agent {
  
     /**
      * Rebuilds the path by taking the parent location and backtracking through its cameFrom
-     * @param start The start of the path
-     * @param end	The end of the path
+     * @param start The start of the path	(where the footman starts)
+     * @param end	The end of the path (the fort)
      * @return	a stack form of the path
      */
     private Stack<MapLocation> reconstructPath(MapLocation start, MapLocation end)
     {
-    	//Intitialize our returned stack
+    	//Initialize our returned stack
     	Stack<MapLocation> toReturn = new Stack<MapLocation>();
     	
     	//We start from the end
+    	//We do not include the end and start in the stack because the end is the
+    	//fort (we cannot travel there) and the start is our footman.
     	MapLocation current = end;
     	//Until we reach the start, keep pulling from the cameFrom value
     	while(!current.equals(start))
