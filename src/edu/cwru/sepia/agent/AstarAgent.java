@@ -515,12 +515,12 @@ public class AstarAgent extends Agent {
 				if(!openSet.contains(neighbor)){
 					//Add g and f scores to neighbor
 					int g_score_estimate = current.g_score + 1;
-					neighbor = new MapLocation(neighbor.x, neighbor.y, current, 0, 
-							g_score_estimate + hfun(neighbor, goal), g_score_estimate);
+					openSet.add( new MapLocation(neighbor.x, neighbor.y, current, 0, 
+							g_score_estimate + hfun(neighbor, goal), g_score_estimate));
 					
 					//Add it to the open set
-					if(!closedSet.contains(neighbor))
-						openSet.add(neighbor);
+					//if(!closedSet.contains(neighbor))
+						//openSet.add(neighbor);
 				}
     			
     		}
