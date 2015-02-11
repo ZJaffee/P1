@@ -519,7 +519,8 @@ public class AstarAgent extends Agent {
 							g_score_estimate + hfun(neighbor, goal), g_score_estimate);
 					
 					//Add it to the open set
-					openSet.add(neighbor);
+					if(!closedSet.contains(neighbor))
+						openSet.add(neighbor);
 				}
     			
     		}
