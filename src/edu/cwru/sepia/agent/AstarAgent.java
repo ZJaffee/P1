@@ -275,7 +275,8 @@ public class AstarAgent extends Agent {
     	 */
 
         //If we are in danger
-        if(inDanger()){
+        if(dangerLevel != 0)
+        {
         	//if we are at max danger
 	    	if(dangerLevel >= MAX_DANGER_LEVEL)
 	        {
@@ -305,10 +306,12 @@ public class AstarAgent extends Agent {
         //We should look ahead to see if the footman is on our path.
         //It's impossible for the footman
         //to be within MAX_LOOKAHEAD steps away if the Chebyshev distance is greater
-        boolean shouldLookAhead = Math.max(Math.abs((double)(footmanX - enemyFootmanX)),
-        		Math.abs((double)(footmanY - enemyFootmanY))) <= MAX_LOOKAHEAD;
+        boolean shouldLookAhead = Math.max( Math.abs((double)(footmanX - enemyFootmanX)),
+        									Math.abs((double)(footmanY - enemyFootmanY))) 
+        									<= 
+        									MAX_LOOKAHEAD;
         if(shouldLookAhead){
-        	System.out.println("Looking ahead");
+        	
 	        //Check if the footman is within MAX_LOOKAHEAD steps ahead of us on our path
 	        Vector<MapLocation> v = currentPath;
 	        int count = 0;
@@ -317,17 +320,13 @@ public class AstarAgent extends Agent {
 	        {
 	        	//Get the ith location
 	        	MapLocation m = v.get(i);
-	        	//System.out.println(counter);
+	        	
 	        	//If the footman is spotted at this location, we want to replan the path
 	        	if(m.x == enemyFootmanX && m.y == enemyFootmanY)
 	        	{
-	        		//Not sure which of the below to options is better:
-	        		//Option 1:Increment dangerLevel: if the dangerLevel was previously zero,
-	        		//meaning we were not in danger, we now consider ourselves in danger
-	        		dangerLevel++;
-	        		//Option 2:Set dangerLevel to 1, ensuring that we will replan again in
+	        		//Set dangerLevel to 1, ensuring that we will replan again in
 	        		//MAX_DANGER_LEVEL - 1 steps
-	        		//dangerLevel = 1;
+	        		dangerLevel = 1;
 	        		//We want to replan the path because the footman is in our way
 	        		return true;
 	        	}
@@ -337,14 +336,6 @@ public class AstarAgent extends Agent {
         return false;
     }
 
-    /**
-     * Check to see if we are in danger.
-     * For now, we are "in danger" if the dangerLevel is not 0
-     * @return	return true if we are in danger, false otherwise
-     */
-    private boolean inDanger() {
-		return dangerLevel != 0;
-	}
 
 	/**
      * This method is implemented for you. You should look at it to see examples of
@@ -593,6 +584,7 @@ public class AstarAgent extends Agent {
     {
     	return Math.max((Math.abs(start.x - goal.x)),(Math.abs(start.y - goal.y)));
     }
+    
     /**
      * Primitive actions take a direction (e.g. NORTH, NORTHEAST, etc)
      * This converts the difference between the current position and the
