@@ -301,9 +301,9 @@ public class AstarAgent extends Agent {
         int enemyFootmanX = enemyFootmanUnit.getXPosition();
         int enemyFootmanY = enemyFootmanUnit.getYPosition();
         
-        //Get the Chebyshev distance to the footman
-        //We should look ahead to see if the footman is on our path only
-        //if it is within the MAX_LOOKAHEAD steps because it's impossible
+        //Get the Chebyshev distance to the footman to decide if 
+        //We should look ahead to see if the footman is on our path.
+        //It's impossible for the footman
         //to be within MAX_LOOKAHEAD steps away if the Chebyshev distance is greater
         boolean shouldLookAhead = Math.max(Math.abs((double)(footmanX - enemyFootmanX)),
         		Math.abs((double)(footmanY - enemyFootmanY))) <= MAX_LOOKAHEAD;
