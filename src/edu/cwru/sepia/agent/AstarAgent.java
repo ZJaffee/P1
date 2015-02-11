@@ -14,24 +14,56 @@ import java.util.*;
 
 public class AstarAgent extends Agent {
 
+	/**
+	 * An abstraction for the map locations
+	 * We implement comparable and override hashCode and equals so that we
+	 * can properly use a PriorityQueue and HashMap with MapLocation
+	 */
     class MapLocation implements Comparable<MapLocation>
     {
+    	//The x and y coordinates of the location
         public int x, y;
+        //The location we came from (null at head)
         public MapLocation cameFrom;
+        //The f score of this location (f = g + h)
         public int f_score;
+        //The g score of this location (g = cameFrom.g + 1);
         public int g_score;
         
+        /**
+         * Constructor when we only know or only need the x and y coordinates
+         * @param x		the x coordinate
+         * @param y		the y coorinate
+         */
         public MapLocation(int x, int y){
         	this.x = x;
         	this.y = y;
         }
-
+        
+        /**
+         * This is the default constructor the assignment came with
+         * None of the code we added really uses it, but it was necessary to keep it
+         * for the code the assignment came with
+         * @param x
+         * @param y
+         * @param cameFrom
+         * @param cost
+         */
         public MapLocation(int x, int y, MapLocation cameFrom, float cost)
         {
             this(x,y);
             this.cameFrom = cameFrom;
         }
         
+        /**
+         * A constructor with set values for all the private variables
+         * @param x
+         * @param y
+         * @param cameFrom
+         * @param cost
+         * @param f
+         * @param g
+         */
         public MapLocation(int x, int y, MapLocation cameFrom, float cost, int f, int g)
         {
             this(x, y, cameFrom, cost);
@@ -39,22 +71,31 @@ public class AstarAgent extends Agent {
             g_score = g;   
         }
         
+        //Prints the x and y coordinate of this MapLocation in (x,y) format
         @Override
         public String toString()
         {
         	return "("+x+","+y+")";
         }
-
+        
+        //compareTo function to enable PriorityQueue
+        //Simply subtract the other f score for this f score
 		@Override
 		public int compareTo(MapLocation o) {
 			return (this.f_score - o.f_score);
 		}
 		
+		//We needed to add a consistent hashCode for HashMaps to work
+		//This is only based on the x and y coordinates
+		//We use the default Integer hashCode, with a constant multiplier on the y
 		@Override
 		public int hashCode(){
 			return Integer.valueOf(x).hashCode() + Integer.valueOf(x).hashCode()*23;
 		}
 		
+		//We needed to add a consistent equals function for PriorityQueue and HashMaps to work
+		//This is only based on the x and y coordinates because 2 MapLocations are equal
+		//if they have the same coordinates, even if the other information is inconsistent.
 		@Override
 		public boolean equals(Object o){
 			if(o instanceof MapLocation){
@@ -73,16 +114,17 @@ public class AstarAgent extends Agent {
     private long totalPlanTime = 0; // nsecs
     private long totalExecutionTime = 0; //nsecs
     
-    //We are "in danger" if the enemy footman is sensed on our path
-    //in within MAX_LOOKAHEAD steps.
-    //When we see the footman within MAX_LOOKAHEAD steps, we will replan the path,
-    //and we will also keep track of the dangerLevel, and replan the path again
-    //when the danger level reaches MAX_DANGER_LEVEL
-    //Our concept of danger is more the "danger of going along a bad path",
-    //Not so much the danger of being attacked
-    //For more explanation, go to the shouldReplanPath function
+    //For deciding whether or not we want to replan our path, one thing we
+    //take into account is the dangerLevel.
+    //For our purposes, dangerLevel is proportional to our concern that our
+    //path is not optimal.
+    //When dangerLevel >= MAX_DANGER_LEVEL, we will replan the path
     private int dangerLevel;
     private final int MAX_DANGER_LEVEL = 4;
+    
+    //For deciding whether or not we want to replan our path, we also 
+    //check to see if the enemy fotman is on our current path in within
+    //MAX_LOOKAHEAD steps
     private final int MAX_LOOKAHEAD = 3;
     
     public AstarAgent(int playernum)
@@ -254,41 +296,51 @@ public class AstarAgent extends Agent {
     }
 
     /**
-     * You will implement this method.
-     *
      * This method should return true when the path needs to be replanned
      * and false otherwise. This will be necessary on the dynamic map where the
      * footman will move to block your unit.
+     * 
+     * There are two cases when we should replan:
+     * 1) The dangerLevel is >= MAX_DANGER_LEVEL.  dangerLevel is related to
+     * 		the 'danger' that we may be following a non-optimal path.
+     * 		dangerLevel is incremented every time we think we are not on an
+     * 		optimal pathm and then we replan when the dangerLevel hits the max.
+     * 		This ensures that, when we replan the path because the enemy footman is in
+     * 		our way, we check again soon to see if the footman moved out of the way.
+     * 2) The enemy footman is within MAX_LOOKAHEAD steps ahead in out current chosen path.
+     * 		If the enemy is in our way, we can't travel this path so we must replan.
+     * 		However, we set dangerLevel to 1, which increments, ensuring that we will
+     * 		try replanning again in MAX_DANGER_LEVEL - 1 steps.
      *
      * @param state
      * @param history
      * @param currentPath
-     * @return
+     * @return	true if we should replan the path
      */
     private boolean shouldReplanPath(State.StateView state, History.HistoryView history, Stack<MapLocation> currentPath)
     {
-    	/*The below check was removed because we altered the middleStepFunction to only call shouldReplanPath
-    	 * when there is an enemy footman.
-    	If there is no enemyFootman, there should never be a reason to replan the path
-    	if(state.getUnit(enemyFootmanID) == null) return false;
-    	 * 
-    	 */
-
-        //If we are in danger
+        //Case 1: Check if danger level is too high
+    	
+    	//If we are in danger (danger Level == 0 when we are not in danger)
         if(dangerLevel != 0)
         {
-        	//if we are at max danger
+        	//check if we are at max danger
 	    	if(dangerLevel >= MAX_DANGER_LEVEL)
 	        {
-	        	//Set dangerLevel to 0 (we are no longer in danger, unless we sense the
+	        	//Set dangerLevel to 0 (we are no longer in danger, until we sense the
 	        	//enemy footman again)
 	        	dangerLevel = 0;
 	        	//We should replan the path
 	        	return true;
 	        }
-	    	//Else, increment the danger level
+	    	//If danger is not max but also not zero, we must increment the danger level 
+	    	//to ensure we'll try replanning the path soon
 	    	dangerLevel++;
         }
+        
+        
+        //Case 2: Check if the enemy footman is in the way of our current path
+        //			(up to MAX_LOOKAHEAD future steps)
     	
         //Get the positions of our footman and the enemy footman
     	Unit.UnitView footmanUnit = state.getUnit(footmanID);
@@ -302,40 +354,39 @@ public class AstarAgent extends Agent {
         int enemyFootmanX = enemyFootmanUnit.getXPosition();
         int enemyFootmanY = enemyFootmanUnit.getYPosition();
         
-        //Get the Chebyshev distance to the footman to decide if 
-        //We should look ahead to see if the footman is on our path.
-        //It's impossible for the footman
-        //to be within MAX_LOOKAHEAD steps away if the Chebyshev distance is greater
-        boolean shouldLookAhead = Math.max( Math.abs((double)(footmanX - enemyFootmanX)),
-        									Math.abs((double)(footmanY - enemyFootmanY))) 
-        									<= 
-        									MAX_LOOKAHEAD;
-        if(shouldLookAhead){
-        	
-	        //Check if the footman is within MAX_LOOKAHEAD steps ahead of us on our path
-	        Vector<MapLocation> v = currentPath;
-	        int count = 0;
+        //Calculate the Chebyshev distance from our footman to the enemy footman
+        int chebyshevDist = (int)Math.max( Math.abs((double)(footmanX - enemyFootmanX)),
+										Math.abs((double)(footmanY - enemyFootmanY))) ;
+        
+        //We know Case 2 is false if the Chebyshev distance from our footman to the enemy
+        //is > MAX_LOOKAHEAD, so no use in looking ahead in that case.
+        if(chebyshevDist <= MAX_LOOKAHEAD){
+        	//Now we check the next MAX_LOOKAHEAD steps in our path to see if the enemy
+        	//footman is there
+        
+	        int stepsLookingAhead = 0;
 	        //Loop through the first checkDist locations, or until the path is over
-	        for(int i = v.size()-1; 0 <= i && count < MAX_LOOKAHEAD; i--, count++)
+	        for(int i = currentPath.size()-1; 0 <= i && stepsLookingAhead < MAX_LOOKAHEAD; i--, stepsLookingAhead++)
 	        {
 	        	//Get the ith location
-	        	MapLocation m = v.get(i);
+	        	MapLocation m = currentPath.get(i);
 	        	
 	        	//If the footman is spotted at this location, we want to replan the path
 	        	if(m.x == enemyFootmanX && m.y == enemyFootmanY)
 	        	{
 	        		//Set dangerLevel to 1, ensuring that we will replan again in
-	        		//MAX_DANGER_LEVEL - 1 steps
+	        		//at most MAX_DANGER_LEVEL - 1 steps
 	        		dangerLevel = 1;
 	        		//We want to replan the path because the footman is in our way
 	        		return true;
 	        	}
 	        }
         }
-        //If the footman isn't too close/on our path, no reason to replan the path (now)
+        
+        //If the danger level is okay, and the footman is not currently in our way
+        //we do not replan
         return false;
     }
-
 
 	/**
      * This method is implemented for you. You should look at it to see examples of
@@ -419,23 +470,26 @@ public class AstarAgent extends Agent {
     private Stack<MapLocation> AstarSearch(MapLocation start, MapLocation goal, int xExtent, int yExtent, MapLocation enemyFootmanLoc, Set<MapLocation> resourceLocations)
     {
     	//Initialize the open and closed sets
-    	//Closed set is a HashMap to have constant .contains() check
+    	//Closed set is a HashMap in order to have constant .contains() check
     	Set<MapLocation> closedSet = new HashSet<MapLocation>();
-    	//Open set is a priority queue to have logn getMax F value
-    	//A possible optimization would be to also have a HashSet openset, so
-    	//it would have a O(1) .contains() method rather than O(logn)
+    	
+    	//Open set is a priority queue in order to have logn getMinF value
+    		//A possible optimization would be to have an additional HashSet version of openSet
+    		//because it would have a O(1) .contains() method rather than O(logn)
+    		//The expense of this optimization would be that it requires double the space
+    		// -- an expense which was not optimal for our smaller sample sizes
     	PriorityQueue<MapLocation> openSet = new PriorityQueue<MapLocation>();
     	
     	//The given MapLocation is not the right format for a HashSet and Priority Queue, 
-    	//so we convert it
-    	MapLocation s = new MapLocation(start.x, start.y, start.cameFrom, 0, hfun(start, goal), 0);
-    	openSet.add(s);
+    	//so we convert it and add it to the open set
+    	start = new MapLocation(start.x, start.y, start.cameFrom, 0, hfun(start, goal), 0);
+    	openSet.add(start);
     	
     	MapLocation current;
     	//While the open set is not empty
     	while(!openSet.isEmpty())
     	{
-    		//Remove the best (highest F value) location from the open set
+    		//Remove the best (lowest F value) location from the open set
     		//remove() for a priority queue will remove the best location
     		//based on the .compareTo() function we have defined
     		current = openSet.remove();
@@ -460,17 +514,13 @@ public class AstarAgent extends Agent {
     			
     			//If it is not in the open set
 				if(!openSet.contains(neighbor)){
-					//Add it to the open set
-					// -- But first we have to calculate it's g and f values because
-					// -- get successors does not do this (since some successor are skipped
-					// -- because they are in the open set, it is better to not make this
-					// -- calculation for every successor in getSuccessors()
-					//The g score is just 1 plus the g score of the current node
+					//Add g and f scores to neighbor
 					int g_score_estimate = current.g_score + 1;
-					MapLocation n = new MapLocation(neighbor.x, neighbor.y, current, 0, 
+					neighbor = new MapLocation(neighbor.x, neighbor.y, current, 0, 
 							g_score_estimate + hfun(neighbor, goal), g_score_estimate);
-					openSet.add(n);
 					
+					//Add it to the open set
+					openSet.add(neighbor);
 				}
     			
     		}
@@ -540,11 +590,7 @@ public class AstarAgent extends Agent {
     	return toReturn;
     	
     }
-    
-    /*
-     * checks if the location is a location we can move to
-     * not updated for the dynamic case yet
-     */
+
     /**
      * Checks if a location is one that is possible to move to, ie it is empty.
      * @param current The current location
