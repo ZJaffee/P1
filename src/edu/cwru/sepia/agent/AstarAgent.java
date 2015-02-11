@@ -44,10 +44,10 @@ public class AstarAgent extends Agent {
          * This is the default constructor the assignment came with
          * None of the code we added really uses it, but it was necessary to keep it
          * for the code the assignment came with
-         * @param x
-         * @param y
-         * @param cameFrom
-         * @param cost
+         * @param x the x coordinate
+         * @param y the y coordinate
+         * @param cameFrom	the MapLocation this once came from
+         * @param cost	the cost to this location
          */
         public MapLocation(int x, int y, MapLocation cameFrom, float cost)
         {
@@ -57,12 +57,12 @@ public class AstarAgent extends Agent {
         
         /**
          * A constructor with set values for all the private variables
-         * @param x
-         * @param y
-         * @param cameFrom
-         * @param cost
-         * @param f
-         * @param g
+         * @param x the x coordinate
+         * @param y the y coordinate
+         * @param cameFrom	the MapLocation this once came from
+         * @param cost	the cost to this location
+         * @param f the f value (f = g + h)
+         * @param g the g values
          */
         public MapLocation(int x, int y, MapLocation cameFrom, float cost, int f, int g)
         {
@@ -119,7 +119,7 @@ public class AstarAgent extends Agent {
     //For our purposes, dangerLevel is proportional to our concern that our
     //path is not optimal.
     //When dangerLevel >= MAX_DANGER_LEVEL, we will replan the path
-    private int dangerLevel;
+    private int dangerLevel = 0;
     private final int MAX_DANGER_LEVEL = 4;
     
     //For deciding whether or not we want to replan our path, we also 
@@ -130,7 +130,6 @@ public class AstarAgent extends Agent {
     public AstarAgent(int playernum)
     {
         super(playernum);
-        dangerLevel = 0;
         System.out.println("Constructed AstarAgent");
     }
 
@@ -312,9 +311,9 @@ public class AstarAgent extends Agent {
      * 		However, we set dangerLevel to 1, which increments, ensuring that we will
      * 		try replanning again in MAX_DANGER_LEVEL - 1 steps.
      *
-     * @param state
-     * @param history
-     * @param currentPath
+     * @param state		The state
+     * @param history	The history
+     * @param currentPath	The currentPath stack
      * @return	true if we should replan the path
      */
     private boolean shouldReplanPath(State.StateView state, History.HistoryView history, Stack<MapLocation> currentPath)
